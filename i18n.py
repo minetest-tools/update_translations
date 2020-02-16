@@ -2,11 +2,10 @@
 # -*- coding: utf-8 -*-
 #
 # Script to generate the template file and update the translation files.
+# Copy the script into the mod or modpack root folder and run it there.
 #
 # Copyright (C) 2019 Joachim Stolberg
 # LGPLv2.1+
-# 
-# Copy the script into the mod root folder and run it there.
 
 from __future__ import print_function
 import os, fnmatch, re, shutil, errno
