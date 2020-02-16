@@ -14,7 +14,7 @@ import os, fnmatch, re, shutil, errno
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
 #TODO: support [[]] delimiters
 #TODO: this doesn't handle string concatenation such as: S('Hello there,' .. " cowboy!")
-pattern_lua = re.compile(r'[ \.=^\t,{]S\((["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[ ,\)]', re.DOTALL)
+pattern_lua = re.compile(r'[ \.=^\t,{\(]S\((["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[ ,\)]', re.DOTALL)
 
 pattern_tr = re.compile(r'(.+?[^@])=(.+)')
 pattern_name = re.compile(r'^name[ ]*=[ ]*([^ ]*)')
@@ -71,6 +71,8 @@ def read_lua_file_strings(lua_file):
             s = s[1]
             s = re.sub(r'"\.\.\s+"', "", s)
             s = re.sub("@[^@=0-9]", "@@", s)
+            s = s.replace('\\"', '"')
+            s = s.replace("\\'", "'")
             s = s.replace("\n", "@n")
             s = s.replace("\\n", "@n")
             s = s.replace("=", "@=")
