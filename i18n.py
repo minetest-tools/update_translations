@@ -14,7 +14,7 @@ import os, fnmatch, re, shutil, errno
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
 #TODO: support [[]] delimiters
 #TODO: this doesn't handle string concatenation such as: S('Hello there,' .. " cowboy!")
-pattern_lua = re.compile(r'[ \.=^\t,{\(]S\((["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[ ,\)]', re.DOTALL)
+pattern_lua = re.compile(r'[ \.=^\t,{\(]S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
 
 pattern_tr = re.compile(r'(.+?[^@])=(.+)')
 pattern_name = re.compile(r'^name[ ]*=[ ]*([^ ]*)')
@@ -102,7 +102,7 @@ def generate_template(folder):
             if fnmatch.fnmatch(name, "*.lua"):
                 fname = os.path.join(root, name)
                 found = read_lua_file_strings(fname)
-                print(fname, len(found))
+                print(fname + ": " + str(len(found)) + " translatable strings")
                 lOut.extend(found)
     lOut = list(set(lOut))
     lOut.sort()
@@ -159,7 +159,7 @@ def update_folder(folder):
 
 update_folder("./")
 
-# Runs this script on each sub-folder in the current folder.
+# Runs this script on each sub-folder in the parent folder.
 # I'm using this for testing this script on all installed mods.
-#for modfolder in [f.path for f in os.scandir("./") if f.is_dir()]:
+#for modfolder in [f.path for f in os.scandir("../") if f.is_dir()]:
 #    update_folder(modfolder + "/")
