@@ -9,11 +9,13 @@
 # Copy the script into the mod root folder and run it there.
 
 from __future__ import print_function
-import os, fnmatch, re, shutil
+import os, fnmatch, re, shutil, errno
 
 #group 2 will be the string, groups 1 and 3 will be the delimiters (" or ')
+#See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
 #TODO: support [[]] delimiters
-pattern_lua = re.compile(r'[ \.=^\t,]S\((["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[ ,\)]', re.DOTALL)
+#TODO: this doesn't handle string concatenation such as: S('Hello there,' .. " cowboy!")
+pattern_lua = re.compile(r'[ \.=^\t,{]S\((["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[ ,\)]', re.DOTALL)
 
 pattern_tr = re.compile(r'(.+?[^@])=(.+)')
 pattern_name = re.compile(r'^name[ ]*=[ ]*([^ ]*)')
@@ -21,11 +23,14 @@ pattern_tr_filename = re.compile(r'\.tr$')
 
 #attempt to read the mod's name from the mod.conf file. Returns None on failure
 def get_modname(folder):
-    with open(folder + "mod.conf", "r", encoding='utf-8') as mod_conf:
-        for line in mod_conf:
-            match = pattern_name.match(line)
-            if match:
-                return match.group(1)
+    try:
+        with open(folder + "mod.conf", "r", encoding='utf-8') as mod_conf:
+            for line in mod_conf:
+                match = pattern_name.match(line)
+                if match:
+                    return match.group(1)
+    except FileNotFoundError:
+        pass
     return None
 
 #If there are already .tr files in /locale, returns a list of their names
@@ -37,12 +42,24 @@ def get_existing_tr_files(folder):
                 out.append(name)
     return out
 
+# from https://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python/600612#600612
+# Creates a directory if it doesn't exist, silently does
+# nothing if it already exists
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc: # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else: raise
+
 # Writes a template.txt file
 def write_template(templ_file, lkeyStrings):
     lOut = []
     lkeyStrings.sort()
     for s in lkeyStrings:
         lOut.append("%s=" % s)
+    mkdir_p(os.path.dirname(templ_file))
     with open(templ_file, "wt", encoding='utf-8') as template_file:
         template_file.write("\n".join(lOut))
 
@@ -88,6 +105,8 @@ def generate_template(folder):
                 lOut.extend(found)
     lOut = list(set(lOut))
     lOut.sort()
+    if len(lOut) == 0:
+        return None
     templ_file = folder + "locale/template.txt"
     write_template(templ_file, lOut)
     return lOut
@@ -118,11 +137,20 @@ def update_mod(folder):
     if modname is not None:
         print("Updating translations for " + modname)
         data = generate_template(folder)
-        for tr_file in get_existing_tr_files(folder):
-            update_tr_file(data, modname, folder + "locale/" + tr_file)
+        if data == None:
+            print("No translatable strings found in " + modname)
+        else:
+            for tr_file in get_existing_tr_files(folder):
+                update_tr_file(data, modname, folder + "locale/" + tr_file)
     else:
         print("Unable to find modname in folder " + folder)
 
 
-update_mod("./")
+is_modpack = os.path.exists("./modpack.txt") or os.path.exists("./modpack.conf")
+if is_modpack:
+    subfolders = [f.path for f in os.scandir("./") if f.is_dir()]
+    for subfolder in subfolders:
+        update_mod(subfolder + "/")
+else:
+    update_mod("./")
 print("Done.")
