@@ -146,12 +146,20 @@ def update_mod(folder):
     else:
         print("Unable to find modname in folder " + folder)
 
+def update_folder(folder):
+    is_modpack = os.path.exists(folder+"modpack.txt") or os.path.exists(folder+"modpack.conf")
+    if is_modpack:
+        subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
+        for subfolder in subfolders:
+            update_mod(subfolder + "/")
+    else:
+        update_mod(folder)
+    print("Done.")
 
-is_modpack = os.path.exists("./modpack.txt") or os.path.exists("./modpack.conf")
-if is_modpack:
-    subfolders = [f.path for f in os.scandir("./") if f.is_dir()]
-    for subfolder in subfolders:
-        update_mod(subfolder + "/")
-else:
-    update_mod("./")
-print("Done.")
+
+update_folder("./")
+
+# Runs this script on each sub-folder in the current folder.
+# I'm using this for testing this script on all installed mods.
+#for modfolder in [f.path for f in os.scandir("./") if f.is_dir()]:
+#    update_folder(modfolder + "/")
