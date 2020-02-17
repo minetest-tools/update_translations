@@ -13,8 +13,10 @@ import os, fnmatch, re, shutil, errno
 #group 2 will be the string, groups 1 and 3 will be the delimiters (" or ')
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
 #TODO: support [[]] delimiters
-#TODO: this doesn't handle string concatenation such as: S('Hello there,' .. " cowboy!")
-pattern_lua = re.compile(r'[ \.=^\t,{\(]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
+pattern_lua = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
+
+# Handles "concatenation" .. " of strings"
+pattern_concat = re.compile(r'["\'][\s]*\.\.[\s]*["\']', re.DOTALL)
 
 pattern_tr = re.compile(r'(.+?[^@])=(.+)')
 pattern_name = re.compile(r'^name[ ]*=[ ]*([^ ]*)')
@@ -67,6 +69,7 @@ def read_lua_file_strings(lua_file):
     lOut = []
     with open(lua_file, encoding='utf-8') as text_file:
         text = text_file.read()
+        text = re.sub(pattern_concat, "", text)        
         for s in pattern_lua.findall(text):
             s = s[1]
             s = re.sub(r'"\.\.\s+"', "", s)
