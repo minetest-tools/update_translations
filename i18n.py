@@ -143,8 +143,11 @@ def read_lua_file_strings(lua_file):
 # Gets strings from an existing translation file
 def import_tr_file(tr_file):
     dOut = {}
+    text = None
     if os.path.exists(tr_file):
         with open(tr_file, "r", encoding='utf-8') as existing_file :
+            text = existing_file.read()
+            existing_file.seek(0)
             for line in existing_file.readlines():
                 s = line.strip()
                 if s == "" or s[0] == "#":
@@ -152,7 +155,7 @@ def import_tr_file(tr_file):
                 match = pattern_tr.match(s)
                 if match:
                     dOut[match.group(1)] = match.group(2)
-    return dOut
+    return (dOut, text)
 
 # Walks all lua files in the mod folder, collects translatable strings,
 # and writes it to a template.txt file
@@ -178,11 +181,10 @@ def update_tr_file(lNew, mod_name, tr_file):
     print("updating " + tr_file)
     lOut = ["# textdomain: %s\n" % mod_name]
 
-    #TODO only make a .old if there are actual changes from the old file
-    if os.path.exists(tr_file):
-        shutil.copyfile(tr_file, tr_file+".old")
-
-    dOld = import_tr_file(tr_file)
+    tr_import = import_tr_file(tr_file)
+    dOld = tr_import[0]
+    textOld = tr_import[1]
+    
     for key in lNew:
         val = dOld.get(key, "")
         lOut.append("%s=%s" % (key, val))
@@ -190,8 +192,14 @@ def update_tr_file(lNew, mod_name, tr_file):
     for key in dOld:
         if key not in lNew:
             lOut.append("%s=%s" % (key, dOld[key]))
+
+    textNew = "\n".join(lOut)
+
+    if textOld and textOld != textNew:
+        shutil.copyfile(tr_file, tr_file+".old")
+
     with open(tr_file, "w", encoding='utf-8') as new_tr_file:
-        new_tr_file.write("\n".join(lOut))
+        new_tr_file.write(textNew)
 
 # Updates translation files for the mod in the given folder
 def update_mod(folder):
