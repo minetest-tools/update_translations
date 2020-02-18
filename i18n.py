@@ -47,15 +47,24 @@ def get_existing_tr_files(folder):
 # A series of search and replaces that massage a .po file's contents into
 # a .tr file's equivalent
 def process_po_file(text):
+    # The first three items are for unused matches
+    text = re.sub(r'#~ msgid "', "", text)
+    text = re.sub(r'"\n#~ msgstr ""\n"', "=", text)
+    text = re.sub(r'"\n#~ msgstr "', "=", text)
+    # comment lines
     text = re.sub(r'#.*\n', "", text)
+    # converting msg pairs into "=" pairs
     text = re.sub(r'msgid "', "", text)
     text = re.sub(r'"\nmsgstr ""\n"', "=", text)
     text = re.sub(r'"\nmsgstr "', "=", text)
+    # various line breaks and escape codes
     text = re.sub(r'"\n"', "", text)
     text = re.sub(r'"\n', "\n", text)
     text = re.sub(r'\\"', '"', text)
     text = re.sub(r'\\n', '@n', text)
+    # remove header text
     text = re.sub(r'=Project-Id-Version:.*\n', "", text)
+    # remove double-spaced lines
     text = re.sub(r'\n\n', '\n', text)
     return text
 
