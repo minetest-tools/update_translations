@@ -12,8 +12,8 @@ import os, fnmatch, re, shutil, errno
 
 #group 2 will be the string, groups 1 and 3 will be the delimiters (" or ')
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
-#TODO: support [[]] delimiters
 pattern_lua = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
+pattern_lua_bracketed = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*\[\[(.*?)\]\][\s,\)]', re.DOTALL)
 
 # Handles "concatenation" .. " of strings"
 pattern_concat = re.compile(r'["\'][\s]*\.\.[\s]*["\']', re.DOTALL)
@@ -113,14 +113,23 @@ def write_template(templ_file, lkeyStrings):
     with open(templ_file, "wt", encoding='utf-8') as template_file:
         template_file.write("\n".join(lOut))
 
+
 # Gets all translatable strings from a lua file
 def read_lua_file_strings(lua_file):
     lOut = []
     with open(lua_file, encoding='utf-8') as text_file:
         text = text_file.read()
-        text = re.sub(pattern_concat, "", text)        
+        #TODO remove comments here
+
+        text = re.sub(pattern_concat, "", text)
+
+        strings = []
         for s in pattern_lua.findall(text):
-            s = s[1]
+            strings.append(s[1])
+        for s in pattern_lua_bracketed.findall(text):
+            strings.append(s)
+                
+        for s in strings:
             s = re.sub(r'"\.\.\s+"', "", s)
             s = re.sub("@[^@=0-9]", "@@", s)
             s = s.replace('\\"', '"')
