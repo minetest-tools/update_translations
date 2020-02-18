@@ -10,6 +10,8 @@
 from __future__ import print_function
 import os, fnmatch, re, shutil, errno
 
+verbose = False
+
 #group 2 will be the string, groups 1 and 3 will be the delimiters (" or ')
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
 pattern_lua = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
@@ -83,11 +85,13 @@ def process_po_files(folder, modname):
             tr_name = modname + "." + language_code + ".tr"
             tr_file = os.path.join(root, tr_name)
             if os.path.exists(tr_file):
-                print(tr_name + " already exists, ignoring " + name)
+                if verbose:
+                    print(tr_name + " already exists, ignoring " + name)
                 continue
             fname = os.path.join(root, name)
             with open(fname, "r", encoding='utf-8') as po_file:
-                print("Importing translations from " + name)
+                if verbose:
+                    print("Importing translations from " + name)
                 text = process_po_file(po_file.read())
                 with open(tr_file, "wt", encoding='utf-8') as tr_out:
                     tr_out.write(text)
@@ -166,7 +170,8 @@ def generate_template(folder):
             if fnmatch.fnmatch(name, "*.lua"):
                 fname = os.path.join(root, name)
                 found = read_lua_file_strings(fname)
-                print(fname + ": " + str(len(found)) + " translatable strings")
+                if verbose:
+                    print(fname + ": " + str(len(found)) + " translatable strings")
                 lOut.extend(found)
     lOut = list(set(lOut))
     lOut.sort()
@@ -178,7 +183,8 @@ def generate_template(folder):
 
 # Updates an existing .tr file, copying the old one to a ".old" file
 def update_tr_file(lNew, mod_name, tr_file):
-    print("updating " + tr_file)
+    if verbose:
+        print("updating " + tr_file)
     lOut = ["# textdomain: %s\n" % mod_name]
 
     tr_import = import_tr_file(tr_file)
@@ -196,6 +202,7 @@ def update_tr_file(lNew, mod_name, tr_file):
     textNew = "\n".join(lOut)
 
     if textOld and textOld != textNew:
+        print(tr_file + " has changed.")
         shutil.copyfile(tr_file, tr_file+".old")
 
     with open(tr_file, "w", encoding='utf-8') as new_tr_file:
@@ -231,5 +238,5 @@ update_folder("./")
 
 # Runs this script on each sub-folder in the parent folder.
 # I'm using this for testing this script on all installed mods.
-#for modfolder in [f.path for f in os.scandir("../") if f.is_dir()]:
-#    update_folder(modfolder + "/")
+for modfolder in [f.path for f in os.scandir("../") if f.is_dir()]:
+    update_folder(modfolder + "/")
