@@ -19,8 +19,9 @@ pattern_lua = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(
 pattern_concat = re.compile(r'["\'][\s]*\.\.[\s]*["\']', re.DOTALL)
 
 pattern_tr = re.compile(r'(.+?[^@])=(.+)')
-pattern_name = re.compile(r'^name[ ]*=[ ]*([^ ]*)')
+pattern_name = re.compile(r'^name[ ]*=[ ]*([^ \n]*)')
 pattern_tr_filename = re.compile(r'\.tr$')
+pattern_po_language_code = re.compile(r'(.*)\.po$')
 
 #attempt to read the mod's name from the mod.conf file. Returns None on failure
 def get_modname(folder):
@@ -42,6 +43,45 @@ def get_existing_tr_files(folder):
             if pattern_tr_filename.search(name):
                 out.append(name)
     return out
+
+# A series of search and replaces that massage a .po file's contents into
+# a .tr file's equivalent
+def process_po_file(text):
+    text = re.sub(r'#.*\n', "", text)
+    text = re.sub(r'msgid "', "", text)
+    text = re.sub(r'"\nmsgstr ""\n"', "=", text)
+    text = re.sub(r'"\nmsgstr "', "=", text)
+    text = re.sub(r'"\n"', "", text)
+    text = re.sub(r'"\n', "\n", text)
+    text = re.sub(r'\\"', '"', text)
+    text = re.sub(r'\\n', '@n', text)
+    text = re.sub(r'=Project-Id-Version:.*\n', "", text)
+    text = re.sub(r'\n\n', '\n', text)
+    return text
+
+# Go through existing .po files and, if a .tr file for that language
+# *doesn't* exist, convert it and create it.
+# The .tr file that results will subsequently be reprocessed so
+# any "no longer used" strings will be preserved.
+# Note that "fuzzy" tags will be lost in this process.
+def process_po_files(folder, modname):
+    for root, dirs, files in os.walk(folder + 'locale/'):
+        for name in files:
+            code_match = pattern_po_language_code.match(name)
+            if code_match == None:
+                continue
+            language_code = code_match.group(1)
+            tr_name = modname + "." + language_code + ".tr"
+            tr_file = os.path.join(root, tr_name)
+            if os.path.exists(tr_file):
+                print(tr_name + " already exists, ignoring " + name)
+                continue
+            fname = os.path.join(root, name)
+            with open(fname, "r", encoding='utf-8') as po_file:
+                print("Importing translations from " + name)
+                text = process_po_file(po_file.read())
+                with open(tr_file, "wt", encoding='utf-8') as tr_out:
+                    tr_out.write(text)
 
 # from https://stackoverflow.com/questions/600268/mkdir-p-functionality-in-python/600612#600612
 # Creates a directory if it doesn't exist, silently does
@@ -139,6 +179,7 @@ def update_tr_file(lNew, mod_name, tr_file):
 def update_mod(folder):
     modname = get_modname(folder)
     if modname is not None:
+        process_po_files(folder, modname)
         print("Updating translations for " + modname)
         data = generate_template(folder)
         if data == None:
