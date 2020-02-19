@@ -25,7 +25,10 @@ options = {"recursive": ['--recursive', '-r'],
     "verbose": ['--verbose', '-v']
 }
 
-
+# Strings longer than this will have extra space added between
+# them in the translation files to make it easier to distinguish their
+# beginnings and endings at a glance
+doublespace_threshold = 60
 
 def set_params_folders(tab: list):
     '''Initialize params["folders"] from CLI arguments.'''
@@ -215,18 +218,23 @@ def strings_to_text(dkeyStrings, dOld, mod_name):
     lSourceKeys = list(dGroupedBySource.keys())
     lSourceKeys.sort()
     for source in lSourceKeys:
-        lOut.append("")
         localizedStrings = dGroupedBySource[source]
         localizedStrings.sort()
+        lOut.append("")
         lOut.append(source)
+        lOut.append("")
         for localizedString in localizedStrings:
-            lOut.append("")
             val = dOld.get(localizedString, {})
             translation = val.get("translation", "")
             comment = val.get("comment")
+            if len(localizedString) > doublespace_threshold and not lOut[-1] == "":
+                lOut.append("")
             if comment != None:
                 lOut.append(comment)
             lOut.append(f"{localizedString}={translation}")
+            if len(localizedString) > doublespace_threshold:
+                lOut.append("")
+
 
     unusedExist = False
     for key in dOld:
@@ -239,11 +247,14 @@ def strings_to_text(dkeyStrings, dOld, mod_name):
             if translation != None and (translation != "" or comment):
                 if not unusedExist:
                     unusedExist = True
-                    lOut.append("\n\n##### not used anymore #####")
-                lOut.append("")
+                    lOut.append("\n\n##### not used anymore #####\n")
+                if len(key) > doublespace_threshold and not lOut[-1] == "":
+                    lOut.append("")
                 if comment != None:
                     lOut.append(comment)
                 lOut.append(f"{key}={translation}")
+                if len(key) > doublespace_threshold:
+                    lOut.append("")
     return "\n".join(lOut) + '\n'
 
 # Writes a template.txt file
