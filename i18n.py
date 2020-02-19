@@ -108,7 +108,7 @@ pattern_lua_bracketed = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*\[\[(.*?)\]\][\s,\)]'
 # Handles "concatenation" .. " of strings"
 pattern_concat = re.compile(r'["\'][\s]*\.\.[\s]*["\']', re.DOTALL)
 
-pattern_tr = re.compile(r'(.+?[^@])=(.+)')
+pattern_tr = re.compile(r'(.+?[^@])=(.*)')
 pattern_name = re.compile(r'^name[ ]*=[ ]*([^ \n]*)')
 pattern_tr_filename = re.compile(r'\.tr$')
 pattern_po_language_code = re.compile(r'(.*)\.po$')
@@ -128,7 +128,7 @@ def get_modname(folder):
 #If there are already .tr files in /locale, returns a list of their names
 def get_existing_tr_files(folder):
     out = []
-    for root, dirs, files in os.walk(os.path.join(folder + 'locale/')):
+    for root, dirs, files in os.walk(os.path.join(folder + '/locale/')):
         for name in files:
             if pattern_tr_filename.search(name):
                 out.append(name)
@@ -197,10 +197,10 @@ def mkdir_p(path):
 
 # Converts the template dictionary to a text to be written as a file
 # dKeyStrings is a dictionary of localized string to source file sets
-# dOld is a dictionary of existing translations, for use when updating
-# existing .tr files
+# dOld is a dictionary of existing translations and comments from
+# the previous version of this text
 def strings_to_text(dkeyStrings, dOld, mod_name):
-    lOut = [f"# textdomain: {mod_name}\n"]
+    lOut = [f"##### textdomain: {mod_name} #####\n"]
     
     dGroupedBySource = {}
 
@@ -220,22 +220,39 @@ def strings_to_text(dkeyStrings, dOld, mod_name):
         localizedStrings.sort()
         lOut.append(source)
         for localizedString in localizedStrings:
-            val = dOld.get(localizedString, "")
-            lOut.append(f"{localizedString}={val}")
+            lOut.append("")
+            val = dOld.get(localizedString, {})
+            translation = val.get("translation", "")
+            comment = val.get("comment")
+            if comment != None:
+                lOut.append(comment)
+            lOut.append(f"{localizedString}={translation}")
 
     unusedExist = False
     for key in dOld:
         if key not in dkeyStrings:
-            if not unusedExist:
-                unusedExist = True
-                lOut.append("\n##### not used anymore #####")
-            lOut.append(f"{key}={dOld[key]}")
+            val = dOld[key]
+            translation = val.get("translation")
+            comment = val.get("comment")
+            # only keep an unused translation if there was translated
+            # text or a comment associated with it
+            if translation != None and (translation != "" or comment):
+                if not unusedExist:
+                    unusedExist = True
+                    lOut.append("\n\n##### not used anymore #####")
+                lOut.append("")
+                if comment != None:
+                    lOut.append(comment)
+                lOut.append(f"{key}={translation}")
     return "\n".join(lOut) + '\n'
 
 # Writes a template.txt file
 # dkeyStrings is the dictionary returned by generate_template
 def write_template(templ_file, dkeyStrings, mod_name):
-    text = strings_to_text(dkeyStrings, {}, mod_name)
+    # read existing template file to preserve comments
+    existing_template = import_tr_file(templ_file)
+    
+    text = strings_to_text(dkeyStrings, existing_template[0], mod_name)
     mkdir_p(os.path.dirname(templ_file))
     with open(templ_file, "wt", encoding='utf-8') as template_file:
         template_file.write(text)
@@ -276,15 +293,37 @@ def import_tr_file(tr_file):
     text = None
     if os.path.exists(tr_file):
         with open(tr_file, "r", encoding='utf-8') as existing_file :
+            # save the full text to allow for comparison
+            # of the old version with the new output
             text = existing_file.read()
             existing_file.seek(0)
+            # a running record of the current comment block
+            # we're inside, to allow preceeding multi-line comments
+            # to be retained for a translation line
+            latest_comment_block = None
             for line in existing_file.readlines():
-                s = line.strip()
-                if s == "" or s[0] == "#":
-                     continue
-                match = pattern_tr.match(s)
+                line = line.rstrip('\n')
+                if line[:3] == "###":
+                    # Reset comment block if we hit a header
+                    latest_comment_block = None
+                    continue
+                if line[:1] == "#":
+                    # Save the comment we're inside
+                    if not latest_comment_block:
+                        latest_comment_block = line
+                    else:
+                        latest_comment_block = latest_comment_block + "\n" + line
+                    continue
+                match = pattern_tr.match(line)
                 if match:
-                    dOut[match.group(1)] = match.group(2)
+                    # this line is a translated line
+                    outval = {}
+                    outval["translation"] = match.group(2)
+                    if latest_comment_block:
+                        # if there was a comment, record that.
+                        outval["comment"] = latest_comment_block
+                    latest_comment_block = None
+                    dOut[match.group(1)] = outval
     return (dOut, text)
 
 # Walks all lua files in the mod folder, collects translatable strings,
@@ -303,7 +342,7 @@ def generate_template(folder, mod_name):
 
                 for s in found:
                     sources = dOut.get(s, set())
-                    sources.add(f"# {os.path.basename(fname)}")
+                    sources.add(f"### {os.path.basename(fname)} ###")
                     dOut[s] = sources
                     
     if len(dOut) == 0:
