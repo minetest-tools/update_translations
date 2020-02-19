@@ -4,7 +4,7 @@
 # Script to generate the template file and update the translation files.
 # Copy the script into the mod or modpack root folder and run it there.
 #
-# Copyright (C) 2019 Joachim Stolberg
+# Copyright (C) 2019 Joachim Stolberg, 2020 FaceDeer
 # LGPLv2.1+
 
 from __future__ import print_function
@@ -107,15 +107,50 @@ def mkdir_p(path):
             pass
         else: raise
 
+# Converts the template dictionary to a text to be written as a file
+# dKeyStrings is a dictionary of localized string to source file sets
+# dOld is a dictionary of existing translations, for use when updating
+# existing .tr files
+def strings_to_text(dkeyStrings, dOld, mod_name):
+    lOut = ["# textdomain: %s\n" % mod_name]
+    
+    dGroupedBySource = {}
+
+    for key in dkeyStrings:
+        sourceList = list(dkeyStrings[key])
+        sourceList.sort()
+        sourceString = "\n".join(sourceList)
+        listForSource = dGroupedBySource.get(sourceString, [])
+        listForSource.append(key)
+        dGroupedBySource[sourceString] = listForSource
+    
+    lSourceKeys = list(dGroupedBySource.keys())
+    lSourceKeys.sort()
+    for source in lSourceKeys:
+        lOut.append("")
+        localizedStrings = dGroupedBySource[source]
+        localizedStrings.sort()
+        lOut.append(source)
+        for localizedString in localizedStrings:
+            val = dOld.get(localizedString, "")
+            lOut.append("%s=%s" % (localizedString, val))
+
+    unusedExist = False
+    for key in dOld:
+        if key not in dkeyStrings:
+            if not unusedExist:
+                unusedExist = True
+                lOut.append("\n##### not used anymore #####")
+            lOut.append("%s=%s" % (key, dOld[key]))
+    return "\n".join(lOut)
+
 # Writes a template.txt file
-def write_template(templ_file, lkeyStrings):
-    lOut = []
-    lkeyStrings.sort()
-    for s in lkeyStrings:
-        lOut.append("%s=" % s)
+# dkeyStrings is the dictionary returned by generate_template
+def write_template(templ_file, dkeyStrings, mod_name):
+    text = strings_to_text(dkeyStrings, {}, mod_name)
     mkdir_p(os.path.dirname(templ_file))
     with open(templ_file, "wt", encoding='utf-8') as template_file:
-        template_file.write("\n".join(lOut))
+        template_file.write(text)
 
 
 # Gets all translatable strings from a lua file
@@ -145,6 +180,9 @@ def read_lua_file_strings(lua_file):
     return lOut
 
 # Gets strings from an existing translation file
+# returns both a dictionary of translations
+# and the full original source text so that the new text
+# can be compared to it for changes.
 def import_tr_file(tr_file):
     dOut = {}
     text = None
@@ -163,8 +201,10 @@ def import_tr_file(tr_file):
 
 # Walks all lua files in the mod folder, collects translatable strings,
 # and writes it to a template.txt file
-def generate_template(folder):
-    lOut = []
+# Returns a dictionary of localized strings to source file sets
+# that can be used with the strings_to_text function.
+def generate_template(folder, mod_name):
+    dOut = {}
     for root, dirs, files in os.walk(folder):
         for name in files:
             if fnmatch.fnmatch(name, "*.lua"):
@@ -172,34 +212,31 @@ def generate_template(folder):
                 found = read_lua_file_strings(fname)
                 if verbose:
                     print(fname + ": " + str(len(found)) + " translatable strings")
-                lOut.extend(found)
-    lOut = list(set(lOut))
-    lOut.sort()
-    if len(lOut) == 0:
+
+                for s in found:
+                    sources = dOut.get(s, set())
+                    sources.add("# " + fname)
+                    dOut[s] = sources
+                    
+    if len(dOut) == 0:
         return None
     templ_file = folder + "locale/template.txt"
-    write_template(templ_file, lOut)
-    return lOut
+    write_template(templ_file, dOut, mod_name)
+    return dOut
 
 # Updates an existing .tr file, copying the old one to a ".old" file
-def update_tr_file(lNew, mod_name, tr_file):
+# if any changes have happened
+# dNew is the data used to generate the template, it has all the
+# currently-existing localized strings
+def update_tr_file(dNew, mod_name, tr_file):
     if verbose:
         print("updating " + tr_file)
-    lOut = ["# textdomain: %s\n" % mod_name]
 
     tr_import = import_tr_file(tr_file)
     dOld = tr_import[0]
     textOld = tr_import[1]
-    
-    for key in lNew:
-        val = dOld.get(key, "")
-        lOut.append("%s=%s" % (key, val))
-    lOut.append("##### not used anymore #####")
-    for key in dOld:
-        if key not in lNew:
-            lOut.append("%s=%s" % (key, dOld[key]))
 
-    textNew = "\n".join(lOut)
+    textNew = strings_to_text(dNew, dOld, mod_name)
 
     if textOld and textOld != textNew:
         print(tr_file + " has changed.")
@@ -214,7 +251,7 @@ def update_mod(folder):
     if modname is not None:
         process_po_files(folder, modname)
         print("Updating translations for " + modname)
-        data = generate_template(folder)
+        data = generate_template(folder, modname)
         if data == None:
             print("No translatable strings found in " + modname)
         else:
@@ -223,6 +260,8 @@ def update_mod(folder):
     else:
         print("Unable to find modname in folder " + folder)
 
+# Determines if the folder being pointed to is a mod or a mod pack
+# and then runs update_mod accordingly
 def update_folder(folder):
     is_modpack = os.path.exists(folder+"modpack.txt") or os.path.exists(folder+"modpack.conf")
     if is_modpack:
