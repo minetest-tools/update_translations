@@ -52,12 +52,12 @@ def print_help(name):
     print(f'''SYNOPSIS
     {name} [OPTIONS] [PATHS...]
 DESCRIPTION
-    {' ,'.join(options["help"])}
+    {', '.join(options["help"])}
         prints this help message
-    {' ,'.join(options["recursive"])}
+    {', '.join(options["recursive"])}
         run on all subfolders of paths given
-    {' ,'.join(options["mods"])}
-        run on installed locally installed modules
+    {', '.join(options["mods"])}
+        run on locally installed modules
     {', '.join(options["verbose"])}
         add output information
 ''')
@@ -128,7 +128,7 @@ def get_modname(folder):
 #If there are already .tr files in /locale, returns a list of their names
 def get_existing_tr_files(folder):
     out = []
-    for root, dirs, files in os.walk(os.path.join(folder + '/locale/')):
+    for root, dirs, files in os.walk(os.path.join(folder, 'locale/')):
         for name in files:
             if pattern_tr_filename.search(name):
                 out.append(name)
