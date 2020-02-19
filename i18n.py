@@ -1,16 +1,104 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # Script to generate the template file and update the translation files.
 # Copy the script into the mod or modpack root folder and run it there.
 #
-# Copyright (C) 2019 Joachim Stolberg, 2020 FaceDeer
+# Copyright (C) 2019 Joachim Stolberg, 2020 FaceDeer, 2020 Louis Royer
 # LGPLv2.1+
 
 from __future__ import print_function
 import os, fnmatch, re, shutil, errno
+from sys import argv as _argv
 
-verbose = False
+# Running params
+params = {"recursive": False,
+    "help": False,
+    "mods": False,
+    "verbose": False,
+    "folders": []
+}
+# Available CLI options
+options = {"recursive": ['--recursive', '-r'],
+    "help": ['--help', '-h'],
+    "mods": ['--installed-mods'],
+    "verbose": ['--verbose', '-v']
+}
+
+
+
+def set_params_folders(tab: list):
+    '''Initialize params["folders"] from CLI arguments.'''
+    # Discarding argument 0 (tool name)
+    for param in tab[1:]:
+        stop_param = False
+        for option in options:
+            if param in options[option]:
+                stop_param = True
+                break
+        if not stop_param:
+            params["folders"].append(os.path.abspath(param))
+
+def set_params(tab: list):
+    '''Initialize params from CLI arguments.'''
+    for option in options:
+        for option_name in options[option]:
+            if option_name in tab:
+                params[option] = True
+                break
+
+def print_help(name):
+    '''Prints some help message.'''
+    print(f'''SYNOPSIS
+    {name} [OPTIONS] [PATHS...]
+DESCRIPTION
+    {' ,'.join(options["help"])}
+        prints this help message
+    {' ,'.join(options["recursive"])}
+        run on all subfolders of paths given
+    {' ,'.join(options["mods"])}
+        run on installed locally installed modules
+    {', '.join(options["verbose"])}
+        add output information
+''')
+
+
+def main():
+    '''Main function'''
+    set_params(_argv)
+    set_params_folders(_argv)
+    if params["help"]:
+        print_help(_argv[0])
+    elif params["recursive"] and params["mods"]:
+        print("Option --installed-mods is incompatible with --recursive")
+    else:
+        # Add recursivity message
+        print("Running ", end='')
+        if params["recursive"]:
+            print("recursively ", end='')
+        # Running
+        if params["mods"]:
+            print(f"on all locally installed modules in {os.path.abspath('~/.minetest/mods/')}")
+            run_all_subfolders("~/.minetest/mods")
+        elif len(params["folders"]) >= 2:
+            print("on folder list:", params["folders"])
+            for f in params["folders"]:
+                if params["recursive"]:
+                    run_all_subfolders(f)
+                else:
+                    update_folder(f)
+        elif len(params["folders"]) == 1:
+            print("on folder", params["folders"][0])
+            if params["recursive"]:
+                run_all_subfolders(params["folders"][0])
+            else:
+                update_folder(params["folders"][0])
+        else:
+            print("on folder", os.path.abspath("./"))
+            if params["recursive"]:
+                run_all_subfolders(os.path.abspath("./"))
+            else:
+                update_folder(os.path.abspath("./"))
 
 #group 2 will be the string, groups 1 and 3 will be the delimiters (" or ')
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
@@ -28,7 +116,7 @@ pattern_po_language_code = re.compile(r'(.*)\.po$')
 #attempt to read the mod's name from the mod.conf file. Returns None on failure
 def get_modname(folder):
     try:
-        with open(folder + "mod.conf", "r", encoding='utf-8') as mod_conf:
+        with open(os.path.join(folder, "mod.conf"), "r", encoding='utf-8') as mod_conf:
             for line in mod_conf:
                 match = pattern_name.match(line)
                 if match:
@@ -40,7 +128,7 @@ def get_modname(folder):
 #If there are already .tr files in /locale, returns a list of their names
 def get_existing_tr_files(folder):
     out = []
-    for root, dirs, files in os.walk(folder + 'locale/'):
+    for root, dirs, files in os.walk(os.path.join(folder + 'locale/')):
         for name in files:
             if pattern_tr_filename.search(name):
                 out.append(name)
@@ -76,7 +164,7 @@ def process_po_file(text):
 # any "no longer used" strings will be preserved.
 # Note that "fuzzy" tags will be lost in this process.
 def process_po_files(folder, modname):
-    for root, dirs, files in os.walk(folder + 'locale/'):
+    for root, dirs, files in os.walk(os.path.join(folder + 'locale/')):
         for name in files:
             code_match = pattern_po_language_code.match(name)
             if code_match == None:
@@ -85,13 +173,13 @@ def process_po_files(folder, modname):
             tr_name = modname + "." + language_code + ".tr"
             tr_file = os.path.join(root, tr_name)
             if os.path.exists(tr_file):
-                if verbose:
-                    print(tr_name + " already exists, ignoring " + name)
+                if params["verbose"]:
+                    print(f"{tr_name} already exists, ignoring {name}")
                 continue
             fname = os.path.join(root, name)
             with open(fname, "r", encoding='utf-8') as po_file:
-                if verbose:
-                    print("Importing translations from " + name)
+                if params["verbose"]:
+                    print(f"Importing translations from {name}")
                 text = process_po_file(po_file.read())
                 with open(tr_file, "wt", encoding='utf-8') as tr_out:
                     tr_out.write(text)
@@ -112,7 +200,7 @@ def mkdir_p(path):
 # dOld is a dictionary of existing translations, for use when updating
 # existing .tr files
 def strings_to_text(dkeyStrings, dOld, mod_name):
-    lOut = ["# textdomain: %s\n" % mod_name]
+    lOut = [f"# textdomain: {mod_name}\n"]
     
     dGroupedBySource = {}
 
@@ -133,7 +221,7 @@ def strings_to_text(dkeyStrings, dOld, mod_name):
         lOut.append(source)
         for localizedString in localizedStrings:
             val = dOld.get(localizedString, "")
-            lOut.append("%s=%s" % (localizedString, val))
+            lOut.append(f"{localizedString}={val}")
 
     unusedExist = False
     for key in dOld:
@@ -141,8 +229,8 @@ def strings_to_text(dkeyStrings, dOld, mod_name):
             if not unusedExist:
                 unusedExist = True
                 lOut.append("\n##### not used anymore #####")
-            lOut.append("%s=%s" % (key, dOld[key]))
-    return "\n".join(lOut)
+            lOut.append(f"{key}={dOld[key]}")
+    return "\n".join(lOut) + '\n'
 
 # Writes a template.txt file
 # dkeyStrings is the dictionary returned by generate_template
@@ -210,17 +298,17 @@ def generate_template(folder, mod_name):
             if fnmatch.fnmatch(name, "*.lua"):
                 fname = os.path.join(root, name)
                 found = read_lua_file_strings(fname)
-                if verbose:
-                    print(fname + ": " + str(len(found)) + " translatable strings")
+                if params["verbose"]:
+                    print(f"{fname}: {str(len(found))} translatable strings")
 
                 for s in found:
                     sources = dOut.get(s, set())
-                    sources.add("# " + fname)
+                    sources.add(f"# {os.path.basename(fname)}")
                     dOut[s] = sources
                     
     if len(dOut) == 0:
         return None
-    templ_file = folder + "locale/template.txt"
+    templ_file = os.path.join(folder, "locale/template.txt")
     write_template(templ_file, dOut, mod_name)
     return dOut
 
@@ -229,8 +317,8 @@ def generate_template(folder, mod_name):
 # dNew is the data used to generate the template, it has all the
 # currently-existing localized strings
 def update_tr_file(dNew, mod_name, tr_file):
-    if verbose:
-        print("updating " + tr_file)
+    if params["verbose"]:
+        print(f"updating {tr_file}")
 
     tr_import = import_tr_file(tr_file)
     dOld = tr_import[0]
@@ -239,8 +327,8 @@ def update_tr_file(dNew, mod_name, tr_file):
     textNew = strings_to_text(dNew, dOld, mod_name)
 
     if textOld and textOld != textNew:
-        print(tr_file + " has changed.")
-        shutil.copyfile(tr_file, tr_file+".old")
+        print(f"{tr_file} has changed.")
+        shutil.copyfile(tr_file, f"{tr_file}.old")
 
     with open(tr_file, "w", encoding='utf-8') as new_tr_file:
         new_tr_file.write(textNew)
@@ -250,20 +338,20 @@ def update_mod(folder):
     modname = get_modname(folder)
     if modname is not None:
         process_po_files(folder, modname)
-        print("Updating translations for " + modname)
+        print(f"Updating translations for {modname}")
         data = generate_template(folder, modname)
         if data == None:
-            print("No translatable strings found in " + modname)
+            print(f"No translatable strings found in {modname}")
         else:
             for tr_file in get_existing_tr_files(folder):
-                update_tr_file(data, modname, folder + "locale/" + tr_file)
+                update_tr_file(data, modname, os.path.join(folder, "locale/", tr_file))
     else:
         print("Unable to find modname in folder " + folder)
 
 # Determines if the folder being pointed to is a mod or a mod pack
 # and then runs update_mod accordingly
 def update_folder(folder):
-    is_modpack = os.path.exists(folder+"modpack.txt") or os.path.exists(folder+"modpack.conf")
+    is_modpack = os.path.exists(os.path.join(folder, "modpack.txt")) or os.path.exists(os.path.join(folder, "modpack.conf"))
     if is_modpack:
         subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
         for subfolder in subfolders:
@@ -272,10 +360,9 @@ def update_folder(folder):
         update_mod(folder)
     print("Done.")
 
+def run_all_subfolders(folder):
+    for modfolder in [f.path for f in os.scandir(folder) if f.is_dir()]:
+        update_folder(modfolder + "/")
 
-update_folder("./")
 
-# Runs this script on each sub-folder in the parent folder.
-# I'm using this for testing this script on all installed mods.
-#for modfolder in [f.path for f in os.scandir("../") if f.is_dir()]:
-#    update_folder(modfolder + "/")
+main()
