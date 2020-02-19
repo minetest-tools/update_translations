@@ -238,5 +238,5 @@ update_folder("./")
 
 # Runs this script on each sub-folder in the parent folder.
 # I'm using this for testing this script on all installed mods.
-for modfolder in [f.path for f in os.scandir("../") if f.is_dir()]:
-    update_folder(modfolder + "/")
+#for modfolder in [f.path for f in os.scandir("../") if f.is_dir()]:
+#    update_folder(modfolder + "/")
