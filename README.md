@@ -9,10 +9,10 @@ It has the following command line options:
 ```
 i18n.py [OPTIONS] [PATHS...]
 
--help : prints this help message
--recursive : run on all subfolders of paths given
--mods : run on installed locally installed modules
--verbose : add output information
+--help, -h : prints this help message
+--recursive, -r : run on all subfolders of paths given
+--installed-mods : run on locally installed modules
+--verbose, -v : add output information
 ```
 
 The script will preserve any comments in the template.txt or the various .tr files, associating them with the line that follows them. So for example:
