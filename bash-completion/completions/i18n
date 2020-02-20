@@ -1,0 +1,55 @@
+#/usr/bin/env bash
+_i18n_completions()
+{
+	local cur OPTS_ALL
+	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt
+	COMPREPLY=()
+	cur="${COMP_WORDS[COMP_CWORD]}"
+	for opt in "${COMP_WORDS[@]}"
+	do
+		case $opt in
+			'-h'|'--help')
+				return 0
+				;;
+			'--installed-mods')
+				hasInstalledModOpt=1
+				;;
+			'-r'|'--recursive')
+				hasRecursiveOpt=1
+				;;
+			'-v'|'--verbose')
+				hasVerboseOpt=1
+				;;
+
+		esac
+	done
+	case $cur in
+		-*)
+			if [ $hasRecursiveOpt ] || [ $hasInstalledModOpt ]
+			then
+				if [ $hasVerboseOpt ]
+				then
+					return 0
+				else
+					OPTS_ALL="--verbose"
+				fi
+			else
+				if [ $hasVerboseOpt ]
+				then
+					OPTS_ALL="--installed-mods
+					--recursive"
+				else
+					OPTS_ALL="--help
+						--verbose
+						--installed-mods
+						--recursive"
+				fi
+			fi
+			COMPREPLY=( $(compgen -W "${OPTS_ALL[*]}" -- $cur) )
+			return 0
+			;;
+	esac
+	COMPREPLY=( $(compgen -f -- $cur) )
+	return 0
+}
+complete -F _i18n_completions i18n.py
