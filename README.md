@@ -33,3 +33,14 @@ If the mod's source changes in such a way that a line with an existing translati
 ```
 ##### not used anymore #####
 ```
+
+## bash autocompletion
+
+When running on linux to install bash_completion for i18n, you can run
+
+```
+mkdir -p ${XDG_DATA_HOME:-$HOME/.local/share}/bash-completions/completions
+ln -s $PWD/bash-completions/completions/i18n ${XDG_DATA_HOME:-$HOME/.local/share}/bash-completions/completions/i18n
+```
+
+This will provide bash autocompletion for this script (you have to run it without using `python3 i18n` command, use `./i18n.py` instead (or `i18n.py` if provided by `$PATH`)).
