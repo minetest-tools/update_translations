@@ -1,8 +1,8 @@
-This Python script is intended for use with localized Minetest mods, ie, mods that contain translatable strings of the form ``S("This string can be translated")``.
+This Python script is intended for use with localized Minetest mods, ie, mods that contain translatable strings of the form ``S("This string can be translated")``. It extracts the strings from the mod's source code and updates the localization files accordingly.
 
-Place it in the root directory of a mod and run it, and it will update the ``template.txt`` and any ``.tr`` files present in that mod's ``/locale`` folder.
+Place it in the root directory of a mod and run it, and it will update the ``template.txt`` and any ``*.tr`` files present in that mod's ``/locale`` folder. If the ``/locale`` folder or ``template.txt`` file don't exist yet they will be created.
 
-This script will also work if you place it in the root directory of a modpack. It will run on each mod inside the modpack in that situation.
+This script will also work in the root directory of a modpack. It will run on each mod inside the modpack in that situation.
 
 It has the following command line options:
 
@@ -15,7 +15,7 @@ i18n.py [OPTIONS] [PATHS...]
 --verbose, -v : add output information
 ```
 
-The script will preserve any comments in the template.txt or the various .tr files, associating them with the line that follows them. So for example:
+The script will preserve any comments in an existing ``template.txt`` or the various ``*.tr`` files, associating them with the line that follows them. So for example:
 
 ```
 # This comment pertains to Some Text
@@ -26,13 +26,15 @@ Some text=
 Text as well=
 ```
 
-Note that whenever the translation files are regenerated the translation lines will be grouped by source lua filename and sorted alphabetically.
+Note that whenever the translation files are regenerated the translation lines will be grouped by source lua filename and sorted alphabetically, so don't bother manually organizing the order of the lines in the file yourself.
 
 If the mod's source changes in such a way that a line with an existing translation or comment is no longer present, the unused line will be moved to the bottom of the translation file under the header:
 
 ```
 ##### not used anymore #####
 ```
+
+This allows for old translations and comments to be reused with new lines where appropriate. This script doesn't attempt "fuzzy" matching of old strings to new, so even a single change of punctuation or spelling will put strings into the "not used anymore" section and require manual reassociation with the new string.
 
 ## bash autocompletion
 
