@@ -2,7 +2,7 @@
 _i18n_completions()
 {
 	local cur OPTS_ALL
-	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt
+	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt hasNoOldFileOpt
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	for opt in "${COMP_WORDS[@]}"
@@ -20,6 +20,9 @@ _i18n_completions()
 			'-v'|'--verbose')
 				hasVerboseOpt=1
 				;;
+			'--no-old-file')
+				hasNoOldFileOpt=1
+				;;
 
 		esac
 	done
@@ -27,21 +30,41 @@ _i18n_completions()
 		-*)
 			if [ $hasRecursiveOpt ] || [ $hasInstalledModOpt ]
 			then
-				if [ $hasVerboseOpt ]
+				if [ $hasVerboseOpt ] && [ $hasNoOldFileOpt ]
 				then
 					return 0
-				else
+				elif [ $hasNoOldFileOpt ]
+				then
 					OPTS_ALL="--verbose"
+				elif [ $hasVerboseOpt ]
+				then
+					OPTS_ALL="--no-old-file"
+				else
+					OPTS_ALL="--verbose
+						--no-old-file"
 				fi
 			else
-				if [ $hasVerboseOpt ]
+				if [ $hasVerboseOpt ] && [ $hasNoOldFileOpt ]
 				then
 					OPTS_ALL="--installed-mods
 					--recursive"
+				elif [ $hasNoOldFileOpt ]
+				then
+					OPTS_ALL="--help
+						--verbose
+						--installed-mods
+						--recursive"
+				elif [ $hasVerboseOpt ]
+				then
+					OPTS_ALL="--help
+						--installed-mods
+						--no-old-file
+						--recursive"
 				else
 					OPTS_ALL="--help
 						--verbose
 						--installed-mods
+						--no-old-file
 						--recursive"
 				fi
 			fi

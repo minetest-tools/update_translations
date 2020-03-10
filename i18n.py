@@ -19,13 +19,15 @@ params = {"recursive": False,
     "help": False,
     "mods": False,
     "verbose": False,
-    "folders": []
+    "folders": [],
+    "no-old-file": False
 }
 # Available CLI options
 options = {"recursive": ['--recursive', '-r'],
     "help": ['--help', '-h'],
     "mods": ['--installed-mods'],
-    "verbose": ['--verbose', '-v']
+    "verbose": ['--verbose', '-v'],
+    "no-old-file": ['--no-old-file']
 }
 
 # Strings longer than this will have extra space added between
@@ -64,6 +66,8 @@ DESCRIPTION
         run on all subfolders of paths given
     {', '.join(options["mods"])}
         run on locally installed modules
+    {', '.join(options["no-old-file"])}
+        do not create *.old files
     {', '.join(options["verbose"])}
         add output information
 ''')
@@ -381,7 +385,8 @@ def update_tr_file(dNew, mod_name, tr_file):
 
     if textOld and textOld != textNew:
         print(f"{tr_file} has changed.")
-        shutil.copyfile(tr_file, f"{tr_file}.old")
+        if not params["no-old-file"]:
+            shutil.copyfile(tr_file, f"{tr_file}.old")
 
     with open(tr_file, "w", encoding='utf-8') as new_tr_file:
         new_tr_file.write(textNew)

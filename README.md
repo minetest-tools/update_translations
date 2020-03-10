@@ -12,6 +12,7 @@ i18n.py [OPTIONS] [PATHS...]
 --help, -h : prints this help message
 --recursive, -r : run on all subfolders of paths given
 --installed-mods : run on locally installed modules
+--no-old-file : do not create *.old files
 --verbose, -v : add output information
 ```
 
@@ -41,8 +42,8 @@ This allows for old translations and comments to be reused with new lines where 
 When running on linux to install bash_completion for i18n, you can run
 
 ```
-mkdir -p ${XDG_DATA_HOME:-$HOME/.local/share}/bash-completions/completions
-ln -s $PWD/bash-completions/completions/i18n ${XDG_DATA_HOME:-$HOME/.local/share}/bash-completions/completions/i18n
+mkdir -p ${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions
+ln -s $PWD/bash-completion/completions/i18n ${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion/completions/i18n.py
 ```
 
 This will provide bash autocompletion for this script (you have to run it without using `python3 i18n` command, use `./i18n.py` instead (or `i18n.py` if provided by `$PATH`)).
