@@ -118,7 +118,7 @@ pattern_lua_bracketed = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*\[\[(.*?)\]\][\s,\)]'
 # Handles "concatenation" .. " of strings"
 pattern_concat = re.compile(r'["\'][\s]*\.\.[\s]*["\']', re.DOTALL)
 
-pattern_tr = re.compile(r'(.+?[^@])=(.*)')
+pattern_tr = re.compile(r'(.*?[^@])=(.*)')
 pattern_name = re.compile(r'^name[ ]*=[ ]*([^ \n]*)')
 pattern_tr_filename = re.compile(r'\.tr$')
 pattern_po_language_code = re.compile(r'(.*)\.po$')
