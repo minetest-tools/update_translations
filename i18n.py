@@ -112,8 +112,10 @@ def main():
 
 #group 2 will be the string, groups 1 and 3 will be the delimiters (" or ')
 #See https://stackoverflow.com/questions/46967465/regex-match-text-in-either-single-or-double-quote
-pattern_lua = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
-pattern_lua_bracketed = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*\[\[(.*?)\]\][\s,\)]', re.DOTALL)
+pattern_lua_s = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
+pattern_lua_fs = re.compile(r'[\.=^\t,{\(\s]N?FS\(\s*(["\'])((?:\\\1|(?:(?!\1)).)*)(\1)[\s,\)]', re.DOTALL)
+pattern_lua_bracketed_s = re.compile(r'[\.=^\t,{\(\s]N?S\(\s*\[\[(.*?)\]\][\s,\)]', re.DOTALL)
+pattern_lua_bracketed_fs = re.compile(r'[\.=^\t,{\(\s]N?FS\(\s*\[\[(.*?)\]\][\s,\)]', re.DOTALL)
 
 # Handles "concatenation" .. " of strings"
 pattern_concat = re.compile(r'["\'][\s]*\.\.[\s]*["\']', re.DOTALL)
@@ -286,9 +288,13 @@ def read_lua_file_strings(lua_file):
         text = re.sub(pattern_concat, "", text)
 
         strings = []
-        for s in pattern_lua.findall(text):
+        for s in pattern_lua_s.findall(text):
             strings.append(s[1])
-        for s in pattern_lua_bracketed.findall(text):
+        for s in pattern_lua_bracketed_s.findall(text):
+            strings.append(s)
+        for s in pattern_lua_fs.findall(text):
+            strings.append(s[1])
+        for s in pattern_lua_bracketed_fs.findall(text):
             strings.append(s)
                 
         for s in strings:
