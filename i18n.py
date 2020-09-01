@@ -13,6 +13,7 @@
 from __future__ import print_function
 import os, fnmatch, re, shutil, errno
 from sys import argv as _argv
+from sys import stderr as _stderr
 
 # Running params
 params = {"recursive": False,
@@ -404,7 +405,8 @@ def update_mod(folder):
             for tr_file in get_existing_tr_files(folder):
                 update_tr_file(data, modname, os.path.join(folder, "locale/", tr_file))
     else:
-        print("Unable to find modname in folder " + folder)
+        print(f"\033[31mUnable to find modname in folder {folder}.\033[0m", file=_stderr)
+        exit(1)
 
 # Determines if the folder being pointed to is a mod or a mod pack
 # and then runs update_mod accordingly
