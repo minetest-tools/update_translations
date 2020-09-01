@@ -212,8 +212,10 @@ def mkdir_p(path):
 # dKeyStrings is a dictionary of localized string to source file sets
 # dOld is a dictionary of existing translations and comments from
 # the previous version of this text
-def strings_to_text(dkeyStrings, dOld, mod_name):
+def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
     lOut = [f"# textdomain: {mod_name}\n"]
+    if header_comments is not None:
+        lOut.append(header_comments)
     
     dGroupedBySource = {}
 
@@ -273,7 +275,7 @@ def write_template(templ_file, dkeyStrings, mod_name):
     # read existing template file to preserve comments
     existing_template = import_tr_file(templ_file)
     
-    text = strings_to_text(dkeyStrings, existing_template[0], mod_name)
+    text = strings_to_text(dkeyStrings, existing_template[0], mod_name, existing_template[2])
     mkdir_p(os.path.dirname(templ_file))
     with open(templ_file, "wt", encoding='utf-8') as template_file:
         template_file.write(text)
@@ -313,9 +315,11 @@ def read_lua_file_strings(lua_file):
 # returns both a dictionary of translations
 # and the full original source text so that the new text
 # can be compared to it for changes.
+# Returns also header comments in the third return value.
 def import_tr_file(tr_file):
     dOut = {}
     text = None
+    header_comment = None
     if os.path.exists(tr_file):
         with open(tr_file, "r", encoding='utf-8') as existing_file :
             # save the full text to allow for comparison
@@ -329,6 +333,16 @@ def import_tr_file(tr_file):
             for line in existing_file.readlines():
                 line = line.rstrip('\n')
                 if line[:3] == "###":
+                    if header_comment is None:
+                        # Save header comments
+                        header_comment = latest_comment_block
+                        # Stip textdomain line
+                        tmp_h_c = ""
+                        for l in header_comment.split('\n'):
+                            if not l.startswith("# textdomain:"):
+                                tmp_h_c += l
+                        header_comment = tmp_h_c
+
                     # Reset comment block if we hit a header
                     latest_comment_block = None
                     continue
@@ -349,7 +363,7 @@ def import_tr_file(tr_file):
                         outval["comment"] = latest_comment_block
                     latest_comment_block = None
                     dOut[match.group(1)] = outval
-    return (dOut, text)
+    return (dOut, text, header_comment)
 
 # Walks all lua files in the mod folder, collects translatable strings,
 # and writes it to a template.txt file
@@ -388,7 +402,7 @@ def update_tr_file(dNew, mod_name, tr_file):
     dOld = tr_import[0]
     textOld = tr_import[1]
 
-    textNew = strings_to_text(dNew, dOld, mod_name)
+    textNew = strings_to_text(dNew, dOld, mod_name, tr_import[2])
 
     if textOld and textOld != textNew:
         print(f"{tr_file} has changed.")
