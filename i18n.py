@@ -340,7 +340,7 @@ def import_tr_file(tr_file):
                         tmp_h_c = ""
                         for l in header_comment.split('\n'):
                             if not l.startswith("# textdomain:"):
-                                tmp_h_c += l
+                                tmp_h_c += l + '\n'
                         header_comment = tmp_h_c
 
                     # Reset comment block if we hit a header
