@@ -25,7 +25,7 @@ def translate(tr_filename):
         return
 
     lines_to_translate = [] # this list of strings will ultimately be sent to Google for translation
-    with open(tr_filename, "r") as tr_file_handle:
+    with open(tr_filename, "r", encoding="utf-8") as tr_file_handle:
         for line in tr_file_handle:
             # Look for lines that end in "=", ie, that don't have a valid translation added to them
             line_lacking_translation = pattern_line_to_translate.search(line)
