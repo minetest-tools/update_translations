@@ -78,13 +78,12 @@ def translate(tr_filename):
 #If there are already .tr files in /locale, returns a list of their names
 def get_existing_tr_files(folder):
     out = []
-    for root, dirs, files in os.walk(os.path.join(folder, 'locale/')):
+    for root, dirs, files in os.walk(folder):
         for name in files:
             if pattern_tr_filename.search(name):
-                out.append(name)
+                out.append(os.path.join(root,name))
     return out
 
 tr_files = get_existing_tr_files(".")
 for tr_file in tr_files:
-    tr_filename = os.path.join("locale/", tr_file)
-    translate(tr_filename)
+    translate(tr_file)
