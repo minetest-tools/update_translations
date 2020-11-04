@@ -70,7 +70,7 @@ def translate(tr_filename):
                             if line_piece in translation_dictionary:
                                 translated_line = translated_line + translation_dictionary[line_piece]
                             else:
-                                print("Google returned string unchanged:")
+                                print("Google returned string unchanged in file " + tr_filename + ":")
                                 print(line_piece)
                                 translated_line = None
                                 break
@@ -87,6 +87,28 @@ def translate(tr_filename):
                         tr_file_new.write(line)
             shutil.move(tr_filename + ".temp", tr_filename) # Overwrite the original file with the new one
 
+pattern_domain = re.compile(r'^# textdomain: (.+)$')
+
+def create_tr_files_from_template(folder, lang_id):
+    if not lang_id in LANGUAGES:
+        print("language ID " + lang_id + " is not supported by Google Translate's API")
+        return
+    for root, dirs, files in os.walk(folder):
+        if root == "." or os.path.split(root)[1] == "locale":
+            for name in files:
+                if name == "template.txt":
+                    template_filename = os.path.join(root,name)
+                    with open(template_filename, "r", encoding="utf-8") as template_file:
+                        first_line = template_file.readline()
+                        domain = pattern_domain.search(first_line)
+                        if domain:
+                            translation_filename = domain.group(1) + "." + lang_id + ".tr"
+                            translation_filename = os.path.join(root,translation_filename)
+                            if not os.path.isfile(translation_filename):
+                                print("Copying template.txt to " + translation_filename)
+                                shutil.copy(template_filename, translation_filename)
+                            else:
+                                print(translation_filename + " already exists")
 
 #If there are already .tr files in /locale, returns a list of their names
 def get_existing_tr_files(folder):
@@ -96,6 +118,8 @@ def get_existing_tr_files(folder):
             if pattern_tr_filename.search(name):
                 out.append(os.path.join(root,name))
     return out
+
+#create_tr_files_from_template(".", "de")
 
 tr_files = get_existing_tr_files(".")
 for tr_file in tr_files:
