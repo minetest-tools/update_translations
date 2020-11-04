@@ -42,34 +42,47 @@ def translate(tr_filename):
 
         # Only do more work if there are lines in need of translation
         if lines_to_translate:
-            print("Calling Google API for " + lang_id)
+            print("Calling Google API for " + tr_filename)
             output = translator.translate(lines_to_translate, src="en", dest=lang_id)
 
             #convert the output translations into a dictionary for easy substitution later
             translation_dictionary = dict()
             for out_line in output:
-                translation_dictionary[out_line.origin] = out_line.text
+                #Google's API sometimes seems to fail to translate a line for no apparent reason
+                #Don't put them in the dictionary, we can leave those untranslated and maybe try again
+                if out_line.origin != out_line.text:
+                    translation_dictionary[out_line.origin] = out_line.text
+
+            translation_dictionary["@n"] = "@n" #These are to be left unchanged
 
             tr_file_handle.seek(0)
             with open(tr_filename + ".temp", "w", encoding="utf-8") as tr_file_new:
                 for line in tr_file_handle:
                     line_lacking_translation = pattern_line_to_translate.search(line)
                     if line_lacking_translation:
-                        tr_file_new.write("#WARNING: AUTOTRANSLATED BY GOOGLE TRANSLATE\n")
-
                         line = line.rstrip('\n') #remove trailing newline so we can add the translated string to the same line
-                        tr_file_new.write(line)
-                        
                         line_split = re.split("(@n)", line[:-1]) #slice to leave off the "=" that's the last character of the line
+                        translated_line = ""
+                        
                         #After splitting the line up on @n again, as was done before, we should have
                         #line segments that match the strings that were sent to Google.
                         for line_piece in line_split:
                             if line_piece in translation_dictionary:
-                                tr_file_new.write(translation_dictionary[line_piece])
+                                translated_line = translated_line + translation_dictionary[line_piece]
                             else:
-                                #This is valid, the various @n delimiters end up here
-                                tr_file_new.write(line_piece)
-                        tr_file_new.write("\n")
+                                print("Google returned string unchanged:")
+                                print(line_piece)
+                                translated_line = None
+                                break
+
+                        if translated_line:
+                            tr_file_new.write("#WARNING: AUTOTRANSLATED BY GOOGLE TRANSLATE\n")
+                            tr_file_new.write(line)
+                            tr_file_new.write(translated_line)
+                            tr_file_new.write("\n")
+                        else:
+                            tr_file_new.write(line)
+                            tr_file_new.write("\n")                            
                     else:
                         tr_file_new.write(line)
             shutil.move(tr_filename + ".temp", tr_filename) # Overwrite the original file with the new one
