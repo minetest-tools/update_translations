@@ -3,6 +3,12 @@
 # or that will puzzle them, and some manual correction of escaped codes such as @1 and @= may be
 # required, but hopefully it will serve as a start to something useful
 
+# Copyright (C) 2020 FaceDeer
+# LGPLv2.1+
+
+# See https://github.com/minetest-tools/update_translations for
+# potential future updates to this script.
+
 from googletrans import Translator, LANGUAGES
 import os, re, shutil
 
