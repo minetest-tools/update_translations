@@ -22,7 +22,8 @@ params = {"recursive": False,
     "verbose": False,
     "folders": [],
     "no-old-file": False,
-    "sort": False,
+    "break-long-lines": False,
+    "sort": False
 }
 # Available CLI options
 options = {"recursive": ['--recursive', '-r'],
@@ -30,13 +31,14 @@ options = {"recursive": ['--recursive', '-r'],
     "mods": ['--installed-mods', '-m'],
     "verbose": ['--verbose', '-v'],
     "no-old-file": ['--no-old-file', '-O'],
-    "sort": ['--sort', '-s'],
+    "break-long-lines": ['--break-long-lines', '-b'],
+    "sort": ['--sort', '-s']
 }
 
 # Strings longer than this will have extra space added between
 # them in the translation files to make it easier to distinguish their
 # beginnings and endings at a glance
-doublespace_threshold = 60
+doublespace_threshold = 80
 
 def set_params_folders(tab: list):
     '''Initialize params["folders"] from CLI arguments.'''
@@ -73,6 +75,8 @@ DESCRIPTION
         do not create *.old files
     {', '.join(options["sort"])}
         sort output strings alphabetically
+    {', '.join(options["break-long-lines"])}
+        add extra line breaks before and after long strings
     {', '.join(options["verbose"])}
         add output information
 ''')
@@ -244,12 +248,12 @@ def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
             val = dOld.get(localizedString, {})
             translation = val.get("translation", "")
             comment = val.get("comment")
-            if len(localizedString) > doublespace_threshold and not lOut[-1] == "":
+            if params["break-long-lines"] and len(localizedString) > doublespace_threshold and not lOut[-1] == "":
                 lOut.append("")
             if comment != None:
                 lOut.append(comment)
             lOut.append(f"{localizedString}={translation}")
-            if len(localizedString) > doublespace_threshold:
+            if params["break-long-lines"] and len(localizedString) > doublespace_threshold:
                 lOut.append("")
 
 
@@ -265,12 +269,12 @@ def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
                 if not unusedExist:
                     unusedExist = True
                     lOut.append("\n\n##### not used anymore #####\n")
-                if len(key) > doublespace_threshold and not lOut[-1] == "":
+                if params["break-long-lines"] and len(key) > doublespace_threshold and not lOut[-1] == "":
                     lOut.append("")
                 if comment != None:
                     lOut.append(comment)
                 lOut.append(f"{key}={translation}")
-                if len(key) > doublespace_threshold:
+                if params["break-long-lines"] and len(key) > doublespace_threshold:
                     lOut.append("")
     return "\n".join(lOut) + '\n'
 
