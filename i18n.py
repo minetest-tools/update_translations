@@ -240,7 +240,8 @@ def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
     lSourceKeys.sort()
     for source in lSourceKeys:
         localizedStrings = dGroupedBySource[source]
-        localizedStrings.sort()
+        if params["sort"]:
+            localizedStrings.sort()
         lOut.append("")
         lOut.append(source)
         lOut.append("")
