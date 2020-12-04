@@ -27,9 +27,9 @@ params = {"recursive": False,
 # Available CLI options
 options = {"recursive": ['--recursive', '-r'],
     "help": ['--help', '-h'],
-    "mods": ['--installed-mods'],
+    "mods": ['--installed-mods', '-m'],
     "verbose": ['--verbose', '-v'],
-    "no-old-file": ['--no-old-file'],
+    "no-old-file": ['--no-old-file', '-O'],
     "sort": ['--sort', '-s'],
 }
 

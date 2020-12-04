@@ -11,7 +11,7 @@ _i18n_completions()
 			'-h'|'--help')
 				return 0
 				;;
-			'--installed-mods')
+			'-m'|'--installed-mods')
 				hasInstalledModOpt=1
 				;;
 			'-r'|'--recursive')
@@ -20,7 +20,7 @@ _i18n_completions()
 			'-v'|'--verbose')
 				hasVerboseOpt=1
 				;;
-			'--no-old-file')
+			'-O'|'--no-old-file')
 				hasNoOldFileOpt=1
 				;;
 
