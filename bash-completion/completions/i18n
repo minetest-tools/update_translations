@@ -2,7 +2,7 @@
 _i18n_completions()
 {
 	local cur OPTS_ALL
-	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt hasNoOldFileOpt
+	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt hasNoOldFileOpt hasSortOpt hasBreakLongLinesOpt
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	for opt in "${COMP_WORDS[@]}"
@@ -23,51 +23,49 @@ _i18n_completions()
 			'-O'|'--no-old-file')
 				hasNoOldFileOpt=1
 				;;
+			'-s'|'--sort')
+				hasSortOpt=1
+				;;
+			'-b'|'--break-long-lines')
+				hasBreakLongLinesOpt=1
+				;;
 
 		esac
 	done
 	case $cur in
-		-*)
+		-*) # check for words starting with "minus" only
+			OPTS_ALL="--help
+				--installed-mods
+				--recursive
+				--verbose
+				--no-old-file
+				--sort
+				--break-long-lines"
+
+			# recursive and installed-mods
+			# are mutually exclusives
 			if [ $hasRecursiveOpt ] || [ $hasInstalledModOpt ]
 			then
-				if [ $hasVerboseOpt ] && [ $hasNoOldFileOpt ]
-				then
-					return 0
-				elif [ $hasNoOldFileOpt ]
-				then
-					OPTS_ALL="--verbose"
-				elif [ $hasVerboseOpt ]
-				then
-					OPTS_ALL="--no-old-file"
-				else
-					OPTS_ALL="--verbose
-						--no-old-file"
-				fi
-			else
-				if [ $hasVerboseOpt ] && [ $hasNoOldFileOpt ]
-				then
-					OPTS_ALL="--installed-mods
-					--recursive"
-				elif [ $hasNoOldFileOpt ]
-				then
-					OPTS_ALL="--help
-						--verbose
-						--installed-mods
-						--recursive"
-				elif [ $hasVerboseOpt ]
-				then
-					OPTS_ALL="--help
-						--installed-mods
-						--no-old-file
-						--recursive"
-				else
-					OPTS_ALL="--help
-						--verbose
-						--installed-mods
-						--no-old-file
-						--recursive"
-				fi
+				OPTS_ALL=${OPTS_ALL//"--recursive"/}
+				OPTS_ALL=${OPTS_ALL//"--installed-mods"/}
 			fi
+			if [ $hasVerboseOpt ]
+			then
+				OPTS_ALL=${OPTS_ALL//"--verbose"/}
+			fi
+			if [ $hasNoOldFileOpt ]
+			then
+				OPTS_ALL=${OPTS_ALL//"--no-old-file"/}
+			fi
+			if [ $hasSortOpt ]
+			then
+				OPTS_ALL=${OPTS_ALL//"--sort"/}
+			fi
+			if [ $hasBreakLongLinesOpt ]
+			then
+				OPTS_ALL=${OPTS_ALL//"--break-long-lines"/}
+			fi
+
 			COMPREPLY=( $(compgen -W "${OPTS_ALL[*]}" -- $cur) )
 			return 0
 			;;
