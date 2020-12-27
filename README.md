@@ -9,11 +9,13 @@ It has the following command line options:
 ```
 i18n.py [OPTIONS] [PATHS...]
 
---help, -h : prints this help message
---recursive, -r : run on all subfolders of paths given
---installed-mods : run on locally installed modules
---no-old-file : do not create *.old files
---verbose, -v : add output information
+--help, -h: prints this help message
+--recursive, -r: run on all subfolders of paths given
+--installed-mods, -m: run on locally installed modules
+--no-old-file, -O: do not create *.old files
+--sort, -s: sort output strings alphabetically
+--break-long-lines, -b: add extra line-breaks before and after long strings
+--verbose, -v: add output information
 ```
 
 The script will preserve any comments in an existing ``template.txt`` or the various ``*.tr`` files, associating them with the line that follows them. So for example:
