@@ -97,8 +97,8 @@ def main():
             print("recursively ", end='')
         # Running
         if params["mods"]:
-            print(f"on all locally installed modules in {os.path.abspath('~/.minetest/mods/')}")
-            run_all_subfolders("~/.minetest/mods")
+            print(f"on all locally installed modules in {os.path.expanduser('~/.minetest/mods/')}")
+            run_all_subfolders(os.path.expanduser("~/.minetest/mods"))
         elif len(params["folders"]) >= 2:
             print("on folder list:", params["folders"])
             for f in params["folders"]:
@@ -191,7 +191,7 @@ def process_po_files(folder, modname):
             if code_match == None:
                 continue
             language_code = code_match.group(1)
-            tr_name = modname + "." + language_code + ".tr"
+            tr_name = f'{modname}.{language_code}.tr'
             tr_file = os.path.join(root, tr_name)
             if os.path.exists(tr_file):
                 if params["verbose"]:
@@ -342,11 +342,11 @@ def import_tr_file(tr_file):
             latest_comment_block = None
             for line in existing_file.readlines():
                 line = line.rstrip('\n')
-                if line[:3] == "###":
-                    if header_comment is None:
+                if line.startswith("###"):
+                    if header_comment is None and not latest_comment_block is None:
                         # Save header comments
                         header_comment = latest_comment_block
-                        # Stip textdomain line
+                        # Strip textdomain line
                         tmp_h_c = ""
                         for l in header_comment.split('\n'):
                             if not l.startswith("# textdomain:"):
@@ -356,7 +356,7 @@ def import_tr_file(tr_file):
                     # Reset comment block if we hit a header
                     latest_comment_block = None
                     continue
-                if line[:1] == "#":
+                elif line.startswith("#"):
                     # Save the comment we're inside
                     if not latest_comment_block:
                         latest_comment_block = line
@@ -443,16 +443,16 @@ def update_mod(folder):
 def update_folder(folder):
     is_modpack = os.path.exists(os.path.join(folder, "modpack.txt")) or os.path.exists(os.path.join(folder, "modpack.conf"))
     if is_modpack:
-        subfolders = [f.path for f in os.scandir(folder) if f.is_dir()]
+        subfolders = [f.path for f in os.scandir(folder) if f.is_dir() and not f.name.startswith('.')]
         for subfolder in subfolders:
-            update_mod(subfolder + "/")
+            update_mod(subfolder)
     else:
         update_mod(folder)
     print("Done.")
 
 def run_all_subfolders(folder):
-    for modfolder in [f.path for f in os.scandir(folder) if f.is_dir()]:
-        update_folder(modfolder + "/")
+    for modfolder in [f.path for f in os.scandir(folder) if f.is_dir() and not f.name.startswith('.')]:
+        update_folder(modfolder)
 
 
 main()
