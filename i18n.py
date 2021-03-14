@@ -134,7 +134,7 @@ pattern_name = re.compile(r'^name[ ]*=[ ]*([^ \n]*)')
 pattern_tr_filename = re.compile(r'\.tr$')
 pattern_po_language_code = re.compile(r'(.*)\.po$')
 
-#attempt to read the mod's name from the mod.conf file. Returns None on failure
+#attempt to read the mod's name from the mod.conf file or folder name. Returns None on failure
 def get_modname(folder):
     try:
         with open(os.path.join(folder, "mod.conf"), "r", encoding='utf-8') as mod_conf:
@@ -143,7 +143,15 @@ def get_modname(folder):
                 if match:
                     return match.group(1)
     except FileNotFoundError:
-        pass
+        if not os.path.isfile(os.path.join(folder, "modpack.txt")):
+            folder_name = os.path.basename(folder)
+            # Special case when run in Minetest's builtin directory
+            if folder_name == "builtin":
+                return "__builtin"
+            else:
+                return folder_name
+        else:
+            return None
     return None
 
 #If there are already .tr files in /locale, returns a list of their names
