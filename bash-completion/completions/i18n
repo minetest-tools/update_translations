@@ -2,7 +2,7 @@
 _i18n_completions()
 {
 	local cur OPTS_ALL
-	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt hasNoOldFileOpt hasSortOpt hasBreakLongLinesOpt
+	local hasInstalledModOpt hasRecursiveOpt hasVerboseOpt hasNoOldFileOpt hasSortOpt hasBreakLongLinesOpt hasPrintSourceOpt
 	COMPREPLY=()
 	cur="${COMP_WORDS[COMP_CWORD]}"
 	for opt in "${COMP_WORDS[@]}"
@@ -29,7 +29,9 @@ _i18n_completions()
 			'-b'|'--break-long-lines')
 				hasBreakLongLinesOpt=1
 				;;
-
+			'-p'|'--print-source')
+				hasPrintSourceOpt=1
+				;;
 		esac
 	done
 	case $cur in
@@ -40,7 +42,8 @@ _i18n_completions()
 				--verbose
 				--no-old-file
 				--sort
-				--break-long-lines"
+				--break-long-lines
+				--print-source"
 
 			# recursive and installed-mods
 			# are mutually exclusives
@@ -64,6 +67,10 @@ _i18n_completions()
 			if [ $hasBreakLongLinesOpt ]
 			then
 				OPTS_ALL=${OPTS_ALL//"--break-long-lines"/}
+			fi
+			if [ $hasPrintSourceOpt]
+			then
+				OPTS_ALL=${OPTS_ALL//"--print-source"/}
 			fi
 
 			COMPREPLY=( $(compgen -W "${OPTS_ALL[*]}" -- $cur) )
