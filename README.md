@@ -15,6 +15,7 @@ i18n.py [OPTIONS] [PATHS...]
 --no-old-file, -O: do not create *.old files
 --sort, -s: sort output strings alphabetically
 --break-long-lines, -b: add extra line-breaks before and after long strings
+--print-source, -p: add comments denoting the soure file
 --verbose, -v: add output information
 ```
 

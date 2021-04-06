@@ -23,7 +23,8 @@ params = {"recursive": False,
     "folders": [],
     "no-old-file": False,
     "break-long-lines": False,
-    "sort": False
+    "sort": False,
+    "print-source": False
 }
 # Available CLI options
 options = {"recursive": ['--recursive', '-r'],
@@ -32,7 +33,8 @@ options = {"recursive": ['--recursive', '-r'],
     "verbose": ['--verbose', '-v'],
     "no-old-file": ['--no-old-file', '-O'],
     "break-long-lines": ['--break-long-lines', '-b'],
-    "sort": ['--sort', '-s']
+    "sort": ['--sort', '-s'],
+    "print-source": ['--print-source', '-p']
 }
 
 # Strings longer than this will have extra space added between
@@ -229,7 +231,7 @@ def mkdir_p(path):
 # dOld is a dictionary of existing translations and comments from
 # the previous version of this text
 def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
-    lOut = [f"# textdomain: {mod_name}\n"]
+    lOut = [f"# textdomain: {mod_name}"]
     if header_comments is not None:
         lOut.append(header_comments)
     
@@ -250,16 +252,17 @@ def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
         localizedStrings = dGroupedBySource[source]
         if params["sort"]:
             localizedStrings.sort()
-        lOut.append("")
-        lOut.append(source)
-        lOut.append("")
+        if params["print-source"]:
+            if lOut[-1] != "":
+                lOut.append("")
+            lOut.append(source)
         for localizedString in localizedStrings:
             val = dOld.get(localizedString, {})
             translation = val.get("translation", "")
             comment = val.get("comment")
             if params["break-long-lines"] and len(localizedString) > doublespace_threshold and not lOut[-1] == "":
                 lOut.append("")
-            if comment != None:
+            if comment != None and comment != "" and not comment.startswith("# textdomain:"):
                 lOut.append(comment)
             lOut.append(f"{localizedString}={translation}")
             if params["break-long-lines"] and len(localizedString) > doublespace_threshold:
