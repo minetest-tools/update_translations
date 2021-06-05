@@ -24,7 +24,8 @@ params = {"recursive": False,
     "no-old-file": False,
     "break-long-lines": False,
     "sort": False,
-    "print-source": False
+    "print-source": False,
+    "truncate-unused": False,
 }
 # Available CLI options
 options = {"recursive": ['--recursive', '-r'],
@@ -34,7 +35,8 @@ options = {"recursive": ['--recursive', '-r'],
     "no-old-file": ['--no-old-file', '-O'],
     "break-long-lines": ['--break-long-lines', '-b'],
     "sort": ['--sort', '-s'],
-    "print-source": ['--print-source', '-p']
+    "print-source": ['--print-source', '-p'],
+    "truncate-unused": ['--truncate-unused', '-t'],
 }
 
 # Strings longer than this will have extra space added between
@@ -81,6 +83,8 @@ DESCRIPTION
         add extra line breaks before and after long strings
     {', '.join(options["verbose"])}
         add output information
+    {', '.join(options["truncate-unused"])}
+        delete unused strings from files
 ''')
 
 
@@ -270,24 +274,25 @@ def strings_to_text(dkeyStrings, dOld, mod_name, header_comments):
 
 
     unusedExist = False
-    for key in dOld:
-        if key not in dkeyStrings:
-            val = dOld[key]
-            translation = val.get("translation")
-            comment = val.get("comment")
-            # only keep an unused translation if there was translated
-            # text or a comment associated with it
-            if translation != None and (translation != "" or comment):
-                if not unusedExist:
-                    unusedExist = True
-                    lOut.append("\n\n##### not used anymore #####\n")
-                if params["break-long-lines"] and len(key) > doublespace_threshold and not lOut[-1] == "":
-                    lOut.append("")
-                if comment != None:
-                    lOut.append(comment)
-                lOut.append(f"{key}={translation}")
-                if params["break-long-lines"] and len(key) > doublespace_threshold:
-                    lOut.append("")
+    if not params["truncate-unused"]:
+        for key in dOld:
+            if key not in dkeyStrings:
+                val = dOld[key]
+                translation = val.get("translation")
+                comment = val.get("comment")
+                # only keep an unused translation if there was translated
+                # text or a comment associated with it
+                if translation != None and (translation != "" or comment):
+                    if not unusedExist:
+                        unusedExist = True
+                        lOut.append("\n\n##### not used anymore #####\n")
+                    if params["break-long-lines"] and len(key) > doublespace_threshold and not lOut[-1] == "":
+                        lOut.append("")
+                    if comment != None:
+                        lOut.append(comment)
+                    lOut.append(f"{key}={translation}")
+                    if params["break-long-lines"] and len(key) > doublespace_threshold:
+                        lOut.append("")
     return "\n".join(lOut) + '\n'
 
 # Writes a template.txt file
