@@ -11,12 +11,13 @@ i18n.py [OPTIONS] [PATHS...]
 
 --help, -h: prints this help message
 --recursive, -r: run on all subfolders of paths given
---installed-mods, -m: run on locally installed modules
+--mods, -m: run on locally installed modules
 --no-old-file, -O: do not create *.old files
 --sort, -s: sort output strings alphabetically
 --break-long-lines, -b: add extra line-breaks before and after long strings
---print-source, -p: add comments denoting the soure file
+--print-source, -p: add comments denoting the source file
 --verbose, -v: add output information
+--truncate-unused, -t: delete unused strings from files
 ```
 
 The script will preserve any comments in an existing ``template.txt`` or the various ``*.tr`` files, associating them with the line that follows them. So for example:

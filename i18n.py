@@ -81,6 +81,8 @@ DESCRIPTION
         sort output strings alphabetically
     {', '.join(options["break-long-lines"])}
         add extra line breaks before and after long strings
+    {', '.join(options["print-source"])}
+	add comments denoting the source file
     {', '.join(options["verbose"])}
         add output information
     {', '.join(options["truncate-unused"])}
