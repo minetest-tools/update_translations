@@ -59,9 +59,11 @@ If you want to translate the fruit names when `return_fruit` is run, but have th
 
 ## How to run the script
 
-Place the script in the root directory of a mod and run it, and it will update the `template.txt` and any `*.tr` files present in that mod's `/locale` folder. If the `/locale` folder or `template.txt` file don't exist yet they will be created.
+First, change the working directory to the directory of the mod you want the files to be updated. From this directory, run the script.
 
-This script will also work in the root directory of a modpack. It will run on each mod inside the modpack in that situation.
+When you run the script, it will update the `template.txt` and any `*.tr` files present in that mod's `/locale` folder. If the `/locale` folder or `template.txt` file don't exist yet, they will be created.
+
+This script will also work in the root directory of a modpack. It will run on each mod inside the modpack in that situation. Alternatively, you can run the script to update the files of all mods in subdirecories with the `-r` option, which is useful to update the locale files in an entire game.
 
 It has the following command line options:
 
