@@ -25,7 +25,7 @@ Here is the boilerplate code you have to add at the top of your source code file
 
     local S = minetest.get_translator("<locale_domain>")
     local NS = function(s) return s end
-    local FS = function(s) return minetest.formspec_escape(S(s)) end
+    local FS = function(...) return minetest.formspec_escape(S(...)) end
     local NFS = function(s) return minetest.formspec_escape(s) end
 
 Replace `<locale_domain>` above and optionally delete `NS`, `FS` and/or `NFS` if you don't need them.
