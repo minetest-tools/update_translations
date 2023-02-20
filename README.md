@@ -94,6 +94,14 @@ If the mod's source changes in such a way that a line with an existing translati
 
 This allows for old translations and comments to be reused with new lines where appropriate. This script doesn't attempt "fuzzy" matching of old strings to new, so even a single change of punctuation or spelling will put strings into the "not used anymore" section and require manual re-association with the new string.
 
+## PO files conversion
+
+This script will automatically convert `.po` files (from GNU gettext and the like)
+if they exist in the `locale/` directory and a corresponding `.tr` file
+*doesn't* exist. The .tr file that results will be reprocessed in
+later runs so any "no longer used" strings will be preserved.
+Note that "fuzzy" tags will be lost in this process.
+
 ## bash auto-completion
 
 When running on Linux to install `bash_completion` for `i18n`, you can run
