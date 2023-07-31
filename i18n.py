@@ -473,4 +473,4 @@ def run_all_subfolders(folder):
         update_folder(modfolder)
 
 
-main()
+if __name__ == "__main__": main()
